@@ -1,8 +1,8 @@
 import { LogicGate, SignalSource } from "./base";
 import { GATE_TYPE } from "./gate";
 
-export class AndGate implements LogicGate {
-  readonly type = GATE_TYPE.AND;
+export class OrGate implements LogicGate {
+  readonly type = GATE_TYPE.OR;
   sources: SignalSource[] = [];
 
   get isActive() {
@@ -14,6 +14,6 @@ export class AndGate implements LogicGate {
   }
 
   getOutput(): boolean {
-    return this.sources.every(i => i.getOutput());
+    return this.sources.some(i => i.getOutput());
   }
 }

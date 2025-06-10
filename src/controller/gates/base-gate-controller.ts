@@ -12,8 +12,24 @@ export class BaseGateController {
     public view: GateView,
   ) {}
 
+  get type() {
+    return this.model.type;
+  }
+
+  get modelValue() {
+    if ('getOutput' in this.model) {
+      return this.model.getOutput();
+    }
+    return this.model.isActive;
+  }
+
   render(renderer: CanvasRenderer) {
-    this.view.render(renderer, { highlightIn: this.highlightIn, highlightOut: this.highlightOut });
+
+    this.view.render(renderer, { 
+      highlightIn: this.highlightIn, 
+      highlightOut: this.highlightOut,
+      isActive: this.modelValue,
+    });
   }
 
   setPosition({ x, y }: Point) {

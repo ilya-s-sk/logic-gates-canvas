@@ -1,6 +1,6 @@
 import { CanvasRenderer, Point } from "../../utils/canvas-renderer";
 import { BaseGateController, LogicGateController, SinkController, SourceContoller } from "../gates";
-import type { SignalSink } from '../../model';
+import { GATE_TYPE, type SignalSink } from '../../model';
 import { defineGateByPos, defineInputByPos, defineOutputByPos } from "./utils";
 
 enum State {
@@ -16,6 +16,7 @@ export class Editor {
   private draggingGate: BaseGateController | null = null;
   private isDragging = false;
   private dragOffset: Point = { x: 0, y: 0 };
+  private startPos: Point | null = null;
 
   private wireSource?: LogicGateController | SourceContoller;
   private tempCursos: Point = { x: 0, y: 0 }
@@ -56,7 +57,7 @@ export class Editor {
   render() {
     this.renderer.clear();
     this.gates.forEach(gate => gate.render(this.renderer));
-    this.renderWiries();
+    this.renderWires();
 
     if (this.state === State.DragWire && this.wireSource) {
       const output = this.wireSource.view.outputPort;
@@ -64,7 +65,7 @@ export class Editor {
     }
   }
 
-  private renderWiries() {
+  private renderWires() {
     for (const item of this.gatesRelationsMap) {
       const [toGate, fromGates] = item;
 
@@ -84,14 +85,15 @@ export class Editor {
 
   private onMouseDown(e: MouseEvent) {
     const pos = this.getCanvasPosition(e);
-    const output = defineOutputByPos(this.gates, pos);
-    const isRightGate = output && (output instanceof SourceContoller || output instanceof LogicGateController)
+    this.startPos = pos;
+    const outputPort = defineOutputByPos(this.gates, pos);
+    const isCorrectGate = outputPort && (outputPort instanceof SourceContoller || outputPort instanceof LogicGateController)
 
-    if (output && isRightGate) {
+    if (outputPort && isCorrectGate) {
       this.state = State.DragWire;
-      this.wireSource = output;
+      this.wireSource = outputPort;
       this.tempCursos = pos;
-      output.highlightOut = true;
+      outputPort.highlightOut = true;
       this.render();
       return;
     }
@@ -129,10 +131,26 @@ export class Editor {
     }
   }
 
+  private handleInputClick(prevPos: Point | null, currentPos: Point) {
+    const isSamePos = prevPos?.x === currentPos.x && prevPos?.y === currentPos.y;
+    const gate = defineGateByPos(this.gates, currentPos);
+    const isInputGate = gate?.type === GATE_TYPE.INPUT;
+
+    if (isSamePos && isInputGate) {
+      (gate as SourceContoller).toggle();
+      this.render();
+      return true
+    }
+    return false;
+  }
+
   private onMouseUp(e: MouseEvent) {
-    if (this.state === State.DragGate) {
-      this.state = State.Idle;
-      this.draggingGate = null;
+    const currentPos = this.getCanvasPosition(e);
+    const isInputToggleEvent = this.handleInputClick(this.startPos, currentPos);
+
+    if (isInputToggleEvent || this.state === State.DragGate) {
+      this.render();
+      this.reset();
       return;
     }
 
@@ -154,12 +172,21 @@ export class Editor {
 
   private clearHighlights() {
     this.gates.forEach(g => {
+      if (this.wireSource === g) {
+        return;
+      }
+
       g.highlightIn = null;
       g.highlightOut = false;
     })
   }
 
   // ------------- helpers -------------
+
+  private reset() {
+    this.state = State.Idle;
+    this.draggingGate = null;
+  }
 
   private getCanvasPosition(e: MouseEvent): Point {
     const r = this.canvas.getBoundingClientRect();

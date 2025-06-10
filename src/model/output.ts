@@ -8,4 +8,8 @@ export class OutputProbe implements SignalSink {
   setInput(_: number, src: SignalSource): void {
     this.sources[0] = src;
   }
+
+  get isActive() {
+    return this.sources[0]?.getOutput();
+  }
 }

@@ -13,6 +13,7 @@ export interface ViewOptions {
 interface RenderOptions {
   highlightIn: number | null;
   highlightOut: boolean;
+  isActive?: boolean;
 }
 
 export abstract class View {
@@ -69,32 +70,6 @@ export class GateView extends View {
     return this.rightSideCenter;
   }
 
-  private renderInputPorts(r: CanvasRenderer, hightlightPort: number | null) {
-    this.inputsPortsPos.forEach((pos, index) => {
-      r.drawCircle(pos, this.portR, hightlightPort === index ? COLOR.ORANGE : COLOR.BLACK);
-    })
-  }
-
-  private renderOutputPorts(r: CanvasRenderer, highlight: boolean) {
-    const pos = this.rightSideCenter;
-    r.drawCircle(pos, this.portR, highlight ? COLOR.ORANGE : COLOR.BLACK);
-  }
-
-  render(
-    renderer: CanvasRenderer,
-    opt?: RenderOptions,
-  ): void {
-    const fillColor = this.isActive ? COLOR.GREEEN : COLOR.RED;
-
-    renderer.drawRect({ x: this.x, y: this.y }, this.width, this.height, fillColor);
-    renderer.drawText(this.label, { x: this.x + 35, y: this.y + 45 }, COLOR.WHITE);
-
-    const { highlightIn = null, highlightOut = false } = opt || {};
-
-    this.renderInputPorts(renderer, highlightIn);
-    this.renderOutputPorts(renderer, highlightOut)
-  }
-
   get leftSideCenter(): Point {
     const x = this.x;
     const y = this.y + Math.round(this.height / 2);
@@ -105,5 +80,31 @@ export class GateView extends View {
     const x = this.x + this.width;
     const y = this.y + Math.round(this.height / 2);
     return { x, y };
+  }
+
+  protected renderInputPorts(r: CanvasRenderer, hightlightPort: number | null) {
+    this.inputsPortsPos.forEach((pos, index) => {
+      r.drawCircle(pos, this.portR, hightlightPort === index ? COLOR.ORANGE : COLOR.BLACK);
+    })
+  }
+
+  protected renderOutputPorts(r: CanvasRenderer, highlight: boolean) {
+    const pos = this.rightSideCenter;
+    r.drawCircle(pos, this.portR, highlight ? COLOR.ORANGE : COLOR.BLACK);
+  }
+
+  render(
+    renderer: CanvasRenderer,
+    opt?: RenderOptions,
+  ): void {
+    const fillColor = (opt?.isActive ?? this.isActive) ? COLOR.GREEEN : COLOR.RED;
+
+    renderer.drawRect({ x: this.x, y: this.y }, this.width, this.height, fillColor);
+    renderer.drawText(this.label, { x: this.x + 35, y: this.y + 45 }, COLOR.WHITE);
+
+    const { highlightIn = null, highlightOut = false } = opt || {};
+
+    this.renderInputPorts(renderer, highlightIn);
+    this.renderOutputPorts(renderer, highlightOut)
   }
 }

@@ -3,7 +3,6 @@ import { gateBuilder } from "./builder";
 import { PanelView } from "../view/panel-view";
 import { Editor } from "./editor";
 
-
 export class PanelController {
   private gateType: GateType = GATE_TYPE.AND;
 
@@ -21,18 +20,26 @@ export class PanelController {
     this.view.button?.addEventListener('click', (event) => this.handleButtonAddClick(event));
   }
 
-  handleGateTypeSelect(event: Event) {
+  private handleGateTypeSelect(event: Event) {
     const value = (event.target as HTMLSelectElement).value;
     this.gateType = value as GateType;
   }
 
-  handleButtonAddClick(event: Event) {
-    const controller = gateBuilder(this.gateType as GateType);
+  private handleButtonAddClick(event: Event) {
+    this.createGate();
+  }
+
+  createGate<T extends GateType>(gateType?: T) {
+    const definedGateType = (gateType || this.gateType) as T;
+
+    const controller = gateBuilder<T>(definedGateType);
 
     if (!controller) {
       throw new Error(`Unknown gate type ${this.gateType}`)
     }
 
     this.editor.addGates([controller]);
+
+    return controller;
   }
 }

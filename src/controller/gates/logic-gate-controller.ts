@@ -1,4 +1,4 @@
-import type { LogicGate } from "../../model";
+import type { LogicGate, SignalSource } from "../../model";
 import type { GateView } from "../../view/gate-view";
 import { BaseGateController } from "./base-gate-controller";
 
@@ -11,7 +11,7 @@ export class LogicGateController extends BaseGateController {
     super(model, view);
   }
 
-  updateInput(index: number, value: LogicGate) {
+  updateInput(index: number, value: SignalSource | LogicGate) {
     this.model.setInput(index, value);
     this.view.isActive = this.model.getOutput();
   }
