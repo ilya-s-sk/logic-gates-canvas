@@ -10,10 +10,11 @@ export interface ViewOptions {
   inputsCount?: number;
 }
 
-interface RenderOptions {
-  highlightIn: number | null;
-  highlightOut: boolean;
+export interface RenderOptions {
+  highlightIn?: number | null;
+  highlightOut?: boolean;
   isActive?: boolean;
+  isHovered?: boolean;
 }
 
 export abstract class View {
@@ -34,6 +35,7 @@ export abstract class View {
 
 export class GateView extends View {
   readonly portR = 7;
+  readonly closeButtonRadius = 10;
 
   constructor({
     x, y, width = 120, height = 80, label, isActive, inputsCount = 2
@@ -50,7 +52,7 @@ export class GateView extends View {
   }
 
   get inputsPortsPos(): Point[] {
-    const ports = [];
+    const ports: Point[] = [];
 
     for (let i = 0; i < this.inputsCount; i++) {
       const partHeight = Math.round(this.height / this.inputsCount);
@@ -82,6 +84,13 @@ export class GateView extends View {
     return { x, y };
   }
 
+  get leftTopCorner(): Point {
+    return {
+      x: this.x - 2,
+      y: this.y - 2,
+    }
+  }
+
   protected renderInputPorts(r: CanvasRenderer, hightlightPort: number | null) {
     this.inputsPortsPos.forEach((pos, index) => {
       r.drawCircle(pos, this.portR, hightlightPort === index ? COLOR.ORANGE : COLOR.BLACK);
@@ -91,6 +100,15 @@ export class GateView extends View {
   protected renderOutputPorts(r: CanvasRenderer, highlight: boolean) {
     const pos = this.rightSideCenter;
     r.drawCircle(pos, this.portR, highlight ? COLOR.ORANGE : COLOR.BLACK);
+  }
+
+  protected renderDeleteButton(r: CanvasRenderer) {
+    const pos = this.leftTopCorner;
+    const rad = this.closeButtonRadius;
+    const half = rad / 2;
+    r.drawCircle(pos, rad, COLOR.BLACK);
+    r.drawLine({ x: pos.x-half, y: pos.y-half }, { x: pos.x + half, y: pos.y + half }, COLOR.WHITE);
+    r.drawLine({ x: pos.x-half, y: pos.y + half }, { x: pos.x + half, y: pos.y - half }, COLOR.WHITE);
   }
 
   render(
@@ -105,6 +123,10 @@ export class GateView extends View {
     const { highlightIn = null, highlightOut = false } = opt || {};
 
     this.renderInputPorts(renderer, highlightIn);
-    this.renderOutputPorts(renderer, highlightOut)
+    this.renderOutputPorts(renderer, highlightOut);
+
+    if (opt?.isHovered) {
+      this.renderDeleteButton(renderer);
+    }
   }
 }

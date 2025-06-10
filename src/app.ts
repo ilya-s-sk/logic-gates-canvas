@@ -42,5 +42,5 @@ export const initApp = () => {
   const output = panel.createGate('OUTPUT');
   output.setPosition({ x: 400, y: 160 });
 
-  editor.render();
+  editor.init();
 }

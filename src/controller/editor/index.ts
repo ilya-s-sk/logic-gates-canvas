@@ -2,6 +2,7 @@ import { CanvasRenderer, Point } from "../../utils/canvas-renderer";
 import { BaseGateController, LogicGateController, SinkController, SourceContoller } from "../gates";
 import { GATE_TYPE, type SignalSink } from '../../model';
 import { defineGateByPos, defineInputByPos, defineOutputByPos } from "./utils";
+import { throttle } from "../../utils/throttle";
 
 enum State {
   Idle,
@@ -17,6 +18,7 @@ export class Editor {
   private isDragging = false;
   private dragOffset: Point = { x: 0, y: 0 };
   private startPos: Point | null = null;
+  private hoveredGate: BaseGateController | null = null;
 
   private wireSource?: LogicGateController | SourceContoller;
   private tempCursos: Point = { x: 0, y: 0 }
@@ -24,8 +26,11 @@ export class Editor {
   constructor(
     private renderer: CanvasRenderer,
     private canvas: HTMLCanvasElement
-  ) {
+  ) {}
+
+  init() {
     this.attachEvents();
+    this.render();
   }
 
   get gatesRelationsMap() {
@@ -56,13 +61,10 @@ export class Editor {
 
   render() {
     this.renderer.clear();
-    this.gates.forEach(gate => gate.render(this.renderer));
-    this.renderWires();
 
-    if (this.state === State.DragWire && this.wireSource) {
-      const output = this.wireSource.view.outputPort;
-      this.renderer.drawLine(output, this.tempCursos, '#000', 1)
-    }
+    this.gates.forEach(gate => gate.render(this.renderer, { isHovered: gate === this.hoveredGate }));
+    this.renderWires();
+    this.renderActiveWire();
   }
 
   private renderWires() {
@@ -77,11 +79,24 @@ export class Editor {
     }
   }
 
+  private renderActiveWire() {
+    if (this.state === State.DragWire && this.wireSource) {
+      const output = this.wireSource.view.outputPort;
+      this.renderer.drawLine(output, this.tempCursos, '#000', 1)
+    }
+  }
+
   private attachEvents() {
+    console.log('attach events')
     this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
     this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
     this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+    
+    const mousemoveHandler = throttle((e) => this.onHover(e as MouseEvent), 100);
+    this.canvas.addEventListener('mousemove', mousemoveHandler);
   }
+
+  // ----------- event handlers -----------
 
   private onMouseDown(e: MouseEvent) {
     const pos = this.getCanvasPosition(e);
@@ -131,24 +146,31 @@ export class Editor {
     }
   }
 
-  private handleInputClick(prevPos: Point | null, currentPos: Point) {
-    const isSamePos = prevPos?.x === currentPos.x && prevPos?.y === currentPos.y;
+  private handleInputClick(gate: SourceContoller) {
+    gate.toggle();
+    this.render();
+  }
+
+  private handleClick(currentPos: Point) {
     const gate = defineGateByPos(this.gates, currentPos);
     const isInputGate = gate?.type === GATE_TYPE.INPUT;
 
-    if (isSamePos && isInputGate) {
-      (gate as SourceContoller).toggle();
-      this.render();
-      return true
+    if (isInputGate) {
+      this.handleInputClick(gate as SourceContoller)
     }
-    return false;
   }
 
   private onMouseUp(e: MouseEvent) {
     const currentPos = this.getCanvasPosition(e);
-    const isInputToggleEvent = this.handleInputClick(this.startPos, currentPos);
+    const isSamePos = this.startPos?.x === currentPos.x && this.startPos?.y === currentPos.y;
 
-    if (isInputToggleEvent || this.state === State.DragGate) {
+    if (isSamePos) {
+      this.handleClick(currentPos);
+      this.reset();
+      return;
+    }
+
+    if (this.state === State.DragGate) {
       this.render();
       this.reset();
       return;
@@ -170,6 +192,19 @@ export class Editor {
     }
   }
 
+  private onHover(e: MouseEvent) {
+    const currentPos = this.getCanvasPosition(e);
+    const gate = defineGateByPos(this.gates, currentPos);
+    if (gate) {
+      this.hoveredGate = gate;
+      this.render();
+    } else if (this.hoveredGate) {
+      this.hoveredGate = null;
+      this.render();
+    }
+  }
+
+  // ------------- helpers -------------
   private clearHighlights() {
     this.gates.forEach(g => {
       if (this.wireSource === g) {
@@ -180,8 +215,6 @@ export class Editor {
       g.highlightOut = false;
     })
   }
-
-  // ------------- helpers -------------
 
   private reset() {
     this.state = State.Idle;

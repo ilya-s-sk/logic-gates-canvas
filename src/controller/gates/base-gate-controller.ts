@@ -1,6 +1,6 @@
 import { LogicGate, SignalSink, SignalSource } from "../../model";
 import { CanvasRenderer, Point } from "../../utils/canvas-renderer";
-import { GateView } from "../../view/gate-view";
+import type { GateView, RenderOptions } from "../../view/gate-view";
 
 
 export class BaseGateController {
@@ -23,9 +23,9 @@ export class BaseGateController {
     return this.model.isActive;
   }
 
-  render(renderer: CanvasRenderer) {
-
-    this.view.render(renderer, { 
+  render(renderer: CanvasRenderer, options?: RenderOptions) {
+    this.view.render(renderer, {
+      ...options,
       highlightIn: this.highlightIn, 
       highlightOut: this.highlightOut,
       isActive: this.modelValue,

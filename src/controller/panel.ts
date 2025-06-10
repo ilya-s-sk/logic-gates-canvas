@@ -1,7 +1,7 @@
 import { GATE_TYPE, GateType } from "../model";
 import { gateBuilder } from "./builder";
 import { PanelView } from "../view/panel-view";
-import { Editor } from "./editor";
+import type { Editor } from "./editor";
 
 export class PanelController {
   private gateType: GateType = GATE_TYPE.AND;

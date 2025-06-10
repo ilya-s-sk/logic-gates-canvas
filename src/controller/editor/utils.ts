@@ -1,11 +1,16 @@
 import { Point } from "../../utils/canvas-renderer";
 import { BaseGateController } from "../gates/base-gate-controller";
 
+const OFFSET_SIZE = 5;
+
 export const defineGateByPos = (gates: BaseGateController[], { x, y }: Point): BaseGateController | null => {
   for (const gate of gates) {
     const { view } = gate;
     const { x: gateX, y: gateY, width, height } = view;
-    const isIntersected = x >= gateX && x <= gateX + width && y >= gateY && y <= gateY + height;
+    const isIntersected = x >= (gateX - OFFSET_SIZE) 
+      && x <= (gateX + width + OFFSET_SIZE) 
+      && y >= (gateY - OFFSET_SIZE) 
+      && y <= (gateY + height + OFFSET_SIZE);
 
     if (isIntersected) {
       return gate;

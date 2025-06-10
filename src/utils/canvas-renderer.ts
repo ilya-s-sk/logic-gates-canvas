@@ -56,7 +56,7 @@ export class CanvasRenderer {
   }
 
   drawLine(from: Point, to: Point, color: Color = COLOR.BLACK, width: number = 2) {
-    this.ctx.fillStyle = color;
+    this.ctx.strokeStyle = color;
     this.ctx.lineWidth = width;
     this.ctx.beginPath();
     this.ctx.moveTo(from.x, from.y);
